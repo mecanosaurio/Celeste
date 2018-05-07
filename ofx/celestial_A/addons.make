@@ -1,0 +1,8 @@
+ofxCv
+ofxDelaunay
+ofxGui
+ofxImageSequenceRecorder
+ofxOpenCv
+ofxOsc
+ofxThreadedImageLoader
+ofxXmlSettings

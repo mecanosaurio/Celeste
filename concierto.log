@@ -1,0 +1,93 @@
+concierto de los ángeles
+
+[2018.05.04] Setup rPi
+
+1- install raspbian stretch, configurar red inalambrica en:
+	sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
+	# configurar usuario, contraseña, ssh, locals y teclado en:
+	# habilitar también audio 3.5
+	sudo raspi-config
+	# reiniciar, obtener ip con:
+	ifconfig wlan0
+
+2. actualizar, instalar paquetes para procesar medios y codecs
+	sudo apt-get update
+	sudo apt-get upgrade
+	sudo apt-get install screen
+	# use it as screen [ctrl-a + c]: new, [ctrl-a + n,b]: next, back [ctrl-a + d]: detach, [ctrl-d]: exit 
+	sudo apt-get install libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev
+	sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev
+	sudo apt-get install libxvidcore-dev libx264-dev
+	sudo apt-get install libatlas-base-dev gfortran
+	sudo apt-get install python2.7-dev
+
+3. instalar herramientas python
+	sudo apt-get install ipython
+	sudo apt-get install python-setuptools
+	sudo pip install pyOSC
+	sudo pip install numpy | sudo apt-get install python-numpy
+	sudo pip install scipy
+	sudo pip install pattern
+	sudo apt-get install python-sklearn
+	sudo apt-get install python-opencv
+
+4. install sc3 + plugins
+	# -- install sc
+    git clone --recursive git://github.com/supercollider/supercollider
+    cd supercollider
+    git checkout 3.9 #use latest version 3.9.x on branch 3.9
+    git submodule init && git submodule update
+    mkdir build && cd build
+    cmake -L -DCMAKE_BUILD_TYPE="Release" -DBUILD_TESTING=OFF -DSUPERNOVA=OFF -DNATIVE=ON -DSC_WII=ON -DSC_IDE=ON -DSC_QT=ON -DSC_ED=OFF -DSC_EL=OFF -DSC_VIM=ON ..
+    make -j 4 #use -j4 flag only for rpi3 (quadcore)
+    sudo make install
+    sudo ldconfig
+    mkdir -p ~/.config/SuperCollider
+	# -- compile and install plugins
+    git clone --recursive https://github.com/supercollider/sc3-plugins.git --depth 1
+    cd sc3-plugins
+    mkdir build && cd build
+    cmake -L -DCMAKE_BUILD_TYPE="Release" -DSUPERNOVA=OFF -DNATIVE=ON -DSC_PATH=../../supercollider/ ..
+    make -j 4 #use -j4 flag only for rpi3 (quadcore)
+    sudo make install
+
+5. set jack, test headless
+  	# -edit: nano ~/.jackdrc with:
+    /usr/bin/jackd -P75 -dalsa -dhw:0 -r44100 -p1024 -n3
+	# -make it headless
+    sudo apt-get install xvfb
+    Xvfb :1 & xvfb-run sclang
+	# -test with
+    {1000000.do{3.1.sqrt}}.bench
+    a = {Mix(50.collect{RLPF.ar(SinOsc.ar)});DC.ar(0)}.play
+    s.avgCPU
+
+6. autorun
+  	# -add: nano ~/autostart.sh 
+    #!/bin/bash
+    PATH=/usr/local/bin:$PATH
+    Xvfb :1 & xvfb-run sclang mycode.scd
+  	# -execution permision
+    chmod +x ~/autostart.sh
+  	# - add to cron: crontab -e 
+    @reboot cd /home/pi && ./autostart.sh
+
+7. edit code: nano ~/mycode.scd #add code inside a waitForBoot
+    s.waitForBoot{ {SinOsc.ar([400, 404])}.play }
+  	sudo reboot #the sound should start after a few seconds log in with ssh
+  	# use: 
+    killall jackd sclang scsynth 
+  	# to stop the sound
+
+
+8. automount drive
+	sudo blkid
+	// /dev/sda1: LABEL="SHIP" UUID="0A0025BA0025AE1F" TYPE="ntfs"
+	sudo mkdir /media/ship
+	sudoi cp /etc/fstab /etc/fstab.bak
+	sudo nano /etc/fstab
+    PARTUUID=0A0025BA0025AE1F       /media/ship     ntfs-3g defaults,user,uid=1000,gid=1000,noatime 0       0
+	// hot mount:
+	sudo mount -a
+
+
