@@ -29,9 +29,9 @@ PFont font;
 
 // ---   ---   ----   --- ---   --- ZETUP
 void setup(){
-  //size(1920, 1080, P3D);
-  //background(64, 202, 255);
-  fullScreen(P3D);
+  size(1920, 1080, P3D);
+  background(64, 202, 255);
+  //fullScreen(P3D);
   frameRate(12);
   noCursor();
   thread("initOSC");
@@ -218,5 +218,13 @@ String[] listFileNames(String dir) {
   } else {
     // If it's not a directory
     return null;
+  }
+}
+
+void keyPressed(){
+  if (key=='f'){
+  }
+  if (key=='s'){
+    saveFrame("cloud_###.png");
   }
 }
